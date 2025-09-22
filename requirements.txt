@@ -1,6 +1,4 @@
 Flask
-paddleocr
-paddlepaddle
-numpy
-gunicorn
 Pillow
+pytesseract
+gunicorn

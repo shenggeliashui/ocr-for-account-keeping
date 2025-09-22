@@ -1,15 +1,11 @@
 import os
 from flask import Flask, request, jsonify
-from paddleocr import PaddleOCR
-import io
 from PIL import Image
+import pytesseract
+import io
 import numpy as np
 
 app = Flask(__name__)
-
-# 初始化 PaddleOCR 引擎
-# 第一次运行时会自动下载模型，可能需要一些时间
-ocr = PaddleOCR(use_angle_cls=True, lang="ch")
 
 @app.route('/ocr', methods=['POST'])
 def ocr_image():
@@ -24,27 +20,20 @@ def ocr_image():
     except IOError:
         return jsonify({'error': 'Invalid image file'}), 400
 
-    # 将图片转换为 NumPy 数组，PaddleOCR 需要这种格式
-    img_np = np.array(image)
+    # 直接对图片进行OCR识别
+    try:
+        recognized_text = pytesseract.image_to_string(image, lang='chi_sim+eng')
+        # 将多行文本分割成列表
+        recognized_lines = [line.strip() for line in recognized_text.split('\n') if line.strip()]
+    except Exception as e:
+        return jsonify({'error': 'OCR failed', 'details': str(e)}), 500
 
-    result = ocr.ocr(img_np, cls=True)
-
-    if not result or not result[0]:
-        return jsonify({'text': []})
-
-    recognized_text = [item[1][0] for item in result[0]]
-
-    # 返回提取的文字内容
-    return jsonify({'text': recognized_text})
+    return jsonify({'text': recognized_lines})
 
 
-# 定义一个健康检查路由，Render 部署时需要
 @app.route('/')
 def health_check():
     return "OK"
 
-
 if __name__ == '__main__':
-    # 在本地运行时，使用 Flask 自带的服务器
-    # Render 部署时会使用 Gunicorn 服务器
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000))
