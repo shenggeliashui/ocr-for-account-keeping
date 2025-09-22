@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from PIL import Image
 import pytesseract
 import io
-import numpy as np
 
 app = Flask(__name__)
 
@@ -29,7 +28,6 @@ def ocr_image():
         return jsonify({'error': 'OCR failed', 'details': str(e)}), 500
 
     return jsonify({'text': recognized_lines})
-
 
 @app.route('/')
 def health_check():
